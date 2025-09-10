@@ -13,6 +13,7 @@
 // library system call function. The saved user %esp points
 // to a saved program counter, and then the first argument.
 int partBcount = 0;
+int partCcount = 0;
 
 // Fetch the int at addr from process p.
 int
@@ -119,6 +120,9 @@ syscall(void)
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
     proc->tf->eax = syscalls[num]();
+    if(proc->tf->eax == 0){
+	partCcount++;
+    }
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             proc->pid, proc->name, num);

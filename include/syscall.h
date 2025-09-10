@@ -25,5 +25,6 @@
 #define SYS_uptime 21
 #define SYS_FirstPart 22
 #define SYS_SecondPart 23
+#define SYS_ThirdPart 24
 
 #endif // _SYSCALL_H_

@@ -107,6 +107,7 @@ static int (*syscalls[])(void) = {
 [SYS_uptime]  sys_uptime,
 [SYS_FirstPart] sys_FirstPart,
 [SYS_SecondPart] sys_SecondPart,
+[SYS_ThirdPart] sys_ThirdPart,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)
@@ -120,7 +121,7 @@ syscall(void)
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
     proc->tf->eax = syscalls[num]();
-    if(proc->tf->eax == 0){
+    if(proc->tf->eax != -1){
 	partCcount++;
     }
   } else {

@@ -54,6 +54,11 @@ sys_SecondPart(void){
 }
 
 int
+sys_ThirdPart(void){
+  return partCcount;
+}
+
+int
 sys_sbrk(void)
 {
   int addr;

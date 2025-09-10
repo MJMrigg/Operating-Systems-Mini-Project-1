@@ -31,4 +31,4 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(FirstPart)
 SYSCALL(SecondPart)
-
+SYSCALL(ThirdPart)

@@ -17,6 +17,7 @@ USER_PROGS := \
 	wc\
 	getpid\
 	PartA\
+	PartB\
 	zombie
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))

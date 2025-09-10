@@ -12,6 +12,7 @@
 // Arguments on the stack, from the user call to the C
 // library system call function. The saved user %esp points
 // to a saved program counter, and then the first argument.
+int partBcount = 0;
 
 // Fetch the int at addr from process p.
 int
@@ -104,6 +105,7 @@ static int (*syscalls[])(void) = {
 [SYS_write]   sys_write,
 [SYS_uptime]  sys_uptime,
 [SYS_FirstPart] sys_FirstPart,
+[SYS_SecondPart] sys_SecondPart,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)
@@ -112,7 +114,8 @@ void
 syscall(void)
 {
   int num;
-  
+  partBcount++;
+
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
     proc->tf->eax = syscalls[num]();

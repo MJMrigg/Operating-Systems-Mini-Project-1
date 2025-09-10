@@ -8,7 +8,7 @@
 
 int partAcount = 0;
 
-int
+
 sys_fork(void)
 {
   return fork();
@@ -47,6 +47,11 @@ sys_getpid(void)
 int 
 sys_FirstPart(void){
   return partAcount;
+}
+
+int
+sys_SecondPart(void){
+  return partBcount;
 }
 
 int

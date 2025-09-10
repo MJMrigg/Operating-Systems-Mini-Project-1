@@ -1,0 +1,51 @@
+Assuption Ubuntu 18.04 is already installed on top of WINDOWS 10, PLEASE DON'T INSTALL UBUNTU 20) 
+If you do not have Ubuntu installed, please follow the instructions at https://www.youtube.com/watch?v=zZf4YH4WiZo before proceeding.
+
+Video Instructions: https://www.youtube.com/watch?v=MT0oFZvNAyI
+
+1. Start Ubuntu
+   
+2. go to root directory, then go to mnt directory and then to the "C" directory
+   cd ..,  c..., cd mnt, cd c here you will be in your familiar home directory
+
+
+Download XV6 from Canvas  Modules->Resources, and place it in some directory in your /Documents  
+
+Unzip the file
+tar xvzf xv6_patched.tar.gz
+        
+Modify file Makefile line 56:   QEMU:=qemu-system-i386 or qemu-system-x86_64 (accordingly) 
+//compile the kernel
+
+make
+
+if the system doesn’t find qemu, then install the c-compiler gcc.
+
+sudo apt update
+sudo apt-get build-essentials or sudo apt install build-essential
+
+Then isntall qemu
+
+sudo apt -get install qemu or sudo apt install qemu
+
+Run qemu by running the following instruction
+make qemu-nox
+
+if you get an error like "user/sh.c:58:1: error: infinite recursion detected [-Werror=infinite-recursion]", open Makefile and comment out the line
+
+	CFLAGS += -Werror
+
+
+if still doesn't work modify again line 56 in Makefile  but this time
+ 
+  QEMU :=/usr/bin/qemu-system-x86_64
+
+
+ make qemu-nox
+
+      
+
+
+  
+
+

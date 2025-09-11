@@ -5,7 +5,7 @@
 
 
 int main(int argc, char * argv[]){
-  printf(1, "Total number of systems calls: %d\n", (int)SecondPart());
+  printf(1, "Total number of system calls: %d\n", (int)SecondPart());
   exit();
 
 

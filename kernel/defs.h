@@ -138,8 +138,8 @@ int             argstr(int, char**);
 int             fetchint(struct proc*, uint, int*);
 int             fetchstr(struct proc*, uint, char**);
 void            syscall(void);
-extern		int partBcount;
-extern		int partCcount;
+extern		int partBcount; //Number of system calls
+extern		int partCcount; //Number of successful system calls
 
 //timer.c 
 void            timerinit(void);

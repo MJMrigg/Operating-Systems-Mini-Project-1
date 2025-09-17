@@ -12,8 +12,8 @@
 // Arguments on the stack, from the user call to the C
 // library system call function. The saved user %esp points
 // to a saved program counter, and then the first argument.
-int partBcount = 0;
-int partCcount = 0;
+int partBcount = 0; //Number of system calls
+int partCcount = 0; //Number of successful system calls
 
 // Fetch the int at addr from process p.
 int
@@ -116,13 +116,13 @@ void
 syscall(void)
 {
   int num;
-  partBcount++;
+  partBcount++; //Increase the number of system calls
 
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
-    proc->tf->eax = syscalls[num]();
-    if(proc->tf->eax != -1){
-	partCcount++;
+    proc->tf->eax = syscalls[num](); //Store result of system call in %eax register
+    if(proc->tf->eax != -1){ //If %eax is not -1
+	partCcount++; //Increase the number of sucessful system calls 
     }
   } else {
     cprintf("%d %s: unknown sys call %d\n",

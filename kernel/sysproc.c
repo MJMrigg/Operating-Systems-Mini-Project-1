@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "sysfunc.h"
 
-int partAcount = 0;
+int partAcount = 0; //Number of times getpid is called
 
 sys_fork(void)
 {
@@ -39,20 +39,23 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
-  partAcount += 1;
+  partAcount += 1; //Add one to the number of times getpid has been called
   return proc->pid;
 }
 
+//Return the number of times getpid has been called
 int 
 sys_FirstPart(void){
   return partAcount;
 }
 
+//Return the number of system calls
 int
 sys_SecondPart(void){
   return partBcount;
 }
 
+//Return the number of successful system calls
 int
 sys_ThirdPart(void){
   return partCcount;

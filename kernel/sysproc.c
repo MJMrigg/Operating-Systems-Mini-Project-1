@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
+#include "pstat.h"
 
 int partAcount = 0; //Number of times getpid is called
 
@@ -59,6 +60,23 @@ sys_SecondPart(void){
 int
 sys_ThirdPart(void){
   return partCcount;
+}
+
+//Return pstat table
+int
+sys_getpinfo(void){
+  struct pstat *ptable;
+  
+  unsigned int number = (unsigned int)&ptable;
+
+  return number;
+}
+
+//Print the process table
+int
+sys_ps(void){
+  ps();
+  return 0;
 }
 
 int

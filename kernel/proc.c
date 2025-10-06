@@ -27,6 +27,45 @@ pinit(void)
   initlock(&ptable.lock, "ptable");
 }
 
+void
+ps(void)
+{
+  struct proc *p; //Pointer to point at processes
+  //Print table headers
+  cprintf("PID\tState\t\tName\tSize\tParent\n");
+  cprintf("---\t-----\t\t----\t----\t------\n");
+  //Get the process table
+  acquire(&ptable.lock);
+  //Go through each process in the process table
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    //If this process is unused, don't print it. It's done
+    if(p->state == UNUSED){
+      continue;
+    }
+    //Print the PID, state, name, size, and parent of the process
+    cprintf("%d\t", p->pid);
+    if(p->state == SLEEPING){
+      cprintf("Sleeping\t\t");
+    }else if(p->state == RUNNABLE){
+      cprintf("Runnable\t\t");
+    }else if(p->state == RUNNING){
+      cprintf("Running\t\t");
+    }else if(p->state == ZOMBIE){
+      cprintf("Zombie\t\t");
+    }else{
+      cprintf("Unknown\t\t");
+    }
+    cprintf("%s\t%d\t", p->name, p->sz);
+    if(p->parent){
+      cprintf("%d\n", p->parent);
+    }else{
+      cprintf("No Parent\n");
+    }
+  }
+  //Release the process table
+  release(&ptable.lock);
+}
+
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
@@ -47,6 +86,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->priority = 1; //Start process at highest priority
+  p->ticks = 0; //Process has been called 0 times
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.

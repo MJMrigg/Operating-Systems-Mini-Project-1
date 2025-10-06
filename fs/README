@@ -5,13 +5,11 @@ B.) Create a file that prints the number of system calls the operating system ha
 C.) Create a file that prints the number of successful system calls.
 
 Running the Project:
-To run the project, it is assume that you have Ubuntu downloaded on your computer. If you do not, see the installing_instructions file.
-1.) Move the project to a directory that is easily accessible and not behind permissions.
-2.) Start Ubuntu from the command prompt and type the "cd .." command. This will take you to the root of the Ubuntu system. 
-3.) From the root, navigate to mnt/path_to_your_xv6_directory.
-4.) Once you have arrived at your directory, run the command "make qemu-nox". This will compile and run xv6.
-5.) From there, you can run commands in your xv6 environment. See the users/makefile.mk for list of valid commands.
-6.) To exit xv6, quickly press ctrl+a, release, and press x on your keyboard.
+To run the project, it is assumed that you have Ubuntu downloaded on your computer. If you do not, see the installing_instructions file.
+1.) Open the SystemStart.bat file.
+2.) Once the file has opened, run the command "make qemu-nox". This will compile and run xv6.
+3.) From there, you can run commands in your xv6 environment. See the users/makefile.mk for list of valid commands.
+4.) To exit xv6, quickly press ctrl+a, release, and press x on your keyboard.
 
 Commands Associated with each Goal:
 A - getpid, PartA

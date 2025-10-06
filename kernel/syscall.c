@@ -83,6 +83,7 @@ argstr(int n, char **pp)
 // can catch definitions that don't match
 
 // array of function pointers to handlers for all the syscalls
+extern int sys_ps(void);
 static int (*syscalls[])(void) = {
 [SYS_chdir]   sys_chdir,
 [SYS_close]   sys_close,
@@ -108,6 +109,8 @@ static int (*syscalls[])(void) = {
 [SYS_FirstPart] sys_FirstPart,
 [SYS_SecondPart] sys_SecondPart,
 [SYS_ThirdPart] sys_ThirdPart,
+[SYS_getpinfo] sys_getpinfo,
+[SYS_ps] sys_ps,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

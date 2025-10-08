@@ -3,13 +3,11 @@
 # include "param.h"
 
 struct pstat{
-	int inuse[NPROC]; //Whether this slot is in use
-	int priority[NPROC]; //Priority of the process
-	int pid[NPROC]; //PID of the process
-	int ticks[NPROC]; //Number of times the process was scheduled
-	int wait_ticks[NPROC]; //Total time spent RUNNABLE
-	int start_tick[NPROC]; //Creation time (ticks)
-	int end_tick[NPROC]; //Completion time (ticks)
-	char name[16][NPROC]; //Names
+	int inuse[NPROC]; // whether this slot of the process table is in use (1 or 0)
+	int pid[NPROC]; // PID of each process
+	int priority[NPROC]; // current priority level of each process (0-3)
+	enum procstate state[NPROC]; // current state (e.g., SLEEPING or RUNNABLE) of each process
+	int ticks[NPROC][4]; // number of ticks each process has accumulated at each of 4 priorities
+	int wait_ticks[NPROC][4]; // number of ticks each process has waited before being scheduled
 };
 # endif //_PSTAT_H_

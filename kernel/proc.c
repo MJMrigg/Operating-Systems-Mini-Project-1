@@ -5,8 +5,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-
-
+#include "queue.h"
 
 struct {
   struct spinlock lock;
@@ -21,6 +20,15 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+// Create queues
+struct queue *queues[4];
+void 
+create_queues(void){
+  for(int i = 0; i < 4; i++){
+    create_queue(queues[i]);
+  }
+}
+
 void
 pinit(void)
 {
@@ -32,8 +40,8 @@ ps(void)
 {
   struct proc *p; //Pointer to point at processes
   //Print table headers
-  cprintf("PID\tState\t\tName\tSize\tParent\n");
-  cprintf("---\t-----\t\t----\t----\t------\n");
+  cprintf("PID\tState\t\tName\tSize\tParent\tPriority\tRR Slices\tTime Slice\n");
+  cprintf("---\t-----\t\t----\t----\t------\t--------\t---------\t----------\n");
   //Get the process table
   acquire(&ptable.lock);
   //Go through each process in the process table
@@ -57,10 +65,11 @@ ps(void)
     }
     cprintf("%s\t%d\t", p->name, p->sz);
     if(p->parent){
-      cprintf("%d\n", p->parent);
+      cprintf("%d\t", p->parent);
     }else{
-      cprintf("No Parent\n");
+      cprintf("No Parent\t");
     }
+    cprintf("%d\t%d\t%d\n",p->priority, p->rr_slice_left, p->timeslice_left);
   }
   //Release the process table
   release(&ptable.lock);
@@ -86,8 +95,11 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->priority = 1; //Start process at highest priority
-  p->ticks = 0; //Process has been called 0 times
+  p->priority = 3; //Set priority to highest queue
+  p->timeslice_left = 8; //The process has 8 time slots left in the current time slice
+  p->rr_slice_left = 1; //The process has 1 time slot left in the current round robin time slice
+  p->next = NULL; //There is no process next in the queue
+  //Add process to the highest priority queue
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -110,6 +122,8 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  enque(queues[0],p);
 
   return p;
 }
@@ -304,6 +318,7 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
+    
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -324,6 +339,30 @@ scheduler(void)
       proc = 0;
     }
     release(&ptable.lock);
+/*
+    //Go through each queue
+    for(int i = 0; i < 4; i++){
+      p = queues[i]->head; //Start at the beginning
+      //Go through each process in the queue
+      for(int j = 0; j < queues[i]->size; j++){
+        if(p->state != RUNNABLE){
+          continue;
+        }
+
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&cpu->scheduler, proc->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      }
+    }*/
 
   }
 }

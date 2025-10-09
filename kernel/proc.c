@@ -20,9 +20,10 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-// Create queues
-struct queue *queues[4];
-void 
+// Queues
+struct queue queues[4];
+//Create the queues
+void
 create_queues(void){
   for(int i = 0; i < 4; i++){
     create_queue(queues[i]);
@@ -33,6 +34,7 @@ void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+  create_queues(); //Create the queues
 }
 
 void
@@ -86,9 +88,10 @@ allocproc(void)
   char *sp;
 
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
       goto found;
+  }
   release(&ptable.lock);
   return 0;
 
@@ -99,7 +102,7 @@ found:
   p->timeslice_left = 8; //The process has 8 time slots left in the current time slice
   p->rr_slice_left = 1; //The process has 1 time slot left in the current round robin time slice
   p->next = NULL; //There is no process next in the queue
-  //Add process to the highest priority queue
+
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -123,7 +126,8 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
-  enque(queues[0],p);
+  //Add process to the highest priority queue
+  enqueue(&queues[0],p);
 
   return p;
 }
@@ -302,6 +306,13 @@ wait(void)
   }
 }
 
+//RR and time slices for each queue
+int slices[4][4] = {
+  {1,2,4,64},     //RR time slices
+  {8,16,32,NULL}  //Time slices
+  //Final time slice is NULL, since the process is just run to the end
+};
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -318,7 +329,7 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    
+    /*//OLD SCHEDULER
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -331,24 +342,54 @@ scheduler(void)
       proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
+      cprintf(" %d%d ",p->pid, proc->pid);
+      swtch(&cpu->scheduler, p->context);
       switchkvm();
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-      proc = 0;
+      //proc = 0;
     }
-    release(&ptable.lock);
-/*
-    //Go through each queue
+    release(&ptable.lock);*/
+    
+    acquire(&ptable.lock);
+    //Go through each queue and look for the highest priority runnable process
     for(int i = 0; i < 4; i++){
-      p = queues[i]->head; //Start at the beginning
+      p = queues[i].head; //Start at the beginning
+
       //Go through each process in the queue
-      for(int j = 0; j < queues[i]->size; j++){
+      for(int j = 0; j < queues[i].size; j++){
+        //If the process isn't runable, move on
         if(p->state != RUNNABLE){
+          p = p->next;
           continue;
         }
-
+        //If the process is out of time slices, move it to a lower priority queue
+        if(p->timeslice_left <= 0 && p->priority > 0){
+          struct proc *temp = p; //Get process
+          p = p->next; //Set p to the next process in the queue
+          //Remove the process from the queue and send it to the lower queue
+          dequeue(&queues[i]);
+          enqueue(&queues[i+1],temp);
+          //Set up rr slices, time slices, and priority
+          temp->rr_slice_left = slices[0][i+1];
+          temp->timeslice_left = slices[1][i+1];
+          temp->priority -= 1;
+          continue;
+        }
+        //If the process is out of round robin slices, move it to the back of the queue but keep its priority
+        if(p->rr_slice_left <= 0){
+          struct proc *temp = p; //Get process
+          p = p->next; //Set p to next process in the queue
+          //Remove process from the front of the queue and send it to the back of the same queue
+          dequeue(&queues[i]);
+          enqueue(&queues[i],temp);
+          //Reset rr slices
+          temp->rr_slice_left = slices[0][i];
+          continue;
+        }
+        //If the process made it this far, it is a runnable process not out of time or rr slices
+        
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
@@ -360,10 +401,14 @@ scheduler(void)
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
-        proc = 0;
-      }
-    }*/
 
+        //Move on to the next process
+        proc = 0;
+        goto stop; //The process was found. Stop going through the queues
+      }
+    }
+    stop:
+    release(&ptable.lock);
   }
 }
 

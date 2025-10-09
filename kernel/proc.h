@@ -1,5 +1,12 @@
 #ifndef _PROC_H_
 #define _PROC_H_
+#include "types.h"
+#include "defs.h"
+#include "param.h"
+#include "mmu.h"
+#include "x86.h"
+#include "proc.h"
+#include "spinlock.h"
 // Segments in proc->gdt.
 // Also known to bootasm.S and trapasm.S
 #define SEG_KCODE 1  // kernel code

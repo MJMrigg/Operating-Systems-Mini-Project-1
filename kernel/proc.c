@@ -309,8 +309,7 @@ wait(void)
 //RR and time slices for each queue
 int slices[4][4] = {
   {1,2,4,64},     //RR time slices
-  {8,16,32,NULL}  //Time slices
-  //Final time slice is NULL, since the process is just run to the end
+  {8,16,32,64}    //Time slices
 };
 
 // Per-CPU process scheduler.
@@ -369,7 +368,7 @@ scheduler(void)
           struct proc *temp = p; //Get process
           p = p->next; //Set p to the next process in the queue
           //Remove the process from the queue and send it to the lower queue
-          dequeue(&queues[i]);
+          dequeue(&queues[i],temp->pid);
           enqueue(&queues[i+1],temp);
           //Set up rr slices, time slices, and priority
           temp->rr_slice_left = slices[0][i+1];
@@ -382,7 +381,7 @@ scheduler(void)
           struct proc *temp = p; //Get process
           p = p->next; //Set p to next process in the queue
           //Remove process from the front of the queue and send it to the back of the same queue
-          dequeue(&queues[i]);
+          dequeue(&queues[i],temp->pid);
           enqueue(&queues[i],temp);
           //Reset rr slices
           temp->rr_slice_left = slices[0][i];
@@ -398,17 +397,36 @@ scheduler(void)
         p->state = RUNNING;
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
+        p->ticks[i] += 1; //Increase tick counter
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
 
         //Move on to the next process
         proc = 0;
-        goto stop; //The process was found. Stop going through the queues
+        goto break_twice; //The process was found. Stop going through the queues
       }
     }
-    stop:
+    break_twice:
     release(&ptable.lock);
+
+    int chosen_process_pid = p->pid; //Keep track of chosen process
+
+    //Increase wait times of all processes by going through each process in each queue
+    for(int i = 0; i < 4; i++){
+      p = queues[i].head;
+      for(int j = 0; j < queues[i].size; j++){
+        //If the current process was the run, don't increase its wait time. It ran, it didn't wait
+        if(p->pid = chosen_process_pid){
+          p = p->next;
+          continue;
+        }
+        //Increase wait time in the queue for the process and then move on to the next one
+        p->wait_ticks[i] += 1;
+        p = p->next;
+      }
+    }
+
   }
 }
 

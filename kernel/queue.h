@@ -32,17 +32,32 @@ void enqueue(struct queue *q, struct proc *new){
     q->size += 1;
 }
 
-void dequeue(struct queue *q){
+void dequeue(struct queue *q, int pid){
     //If the queue is empty, do nothing
     if(q->head == NULL || q->size == 0){
         return;
     }
-    //Have the head point to the next process
-    struct proc *temp = q->head;
-    q->head = q->head->next;
-    //Have the previous head leave the queue by no longer pointing to the next process in the queue
-    temp->next = NULL;
-    //Decrease the size by 1
-    q->size -= 1;
+    //If the process is at the head of the queue, simply have the head stop pointing at the process
+    if(q->head->pid == pid){
+        struct proc *temp = q->head;
+        q->head = q->head->next;
+        temp->next = NULL;
+        return;
+    }
+    //If it was not, start looking through the whole queue
+    struct proc *cur = q->head->next; //Start at the second process, as was already know the head is not the one we're looking for
+    struct proc *parent = q->head; //Keep track of the process that came before it in the queue(will be useful)
+    while(cur != NULL){
+        //If the process was found, remove it from the queue by making the one before point to the one after it
+        if(cur->pid == pid){
+            parent->next = cur->next;
+            cur->next = NULL;
+            return;
+        }
+        //If it wasn't, move on to the next process
+        cur = cur->next;
+        parent = parent->next;
+    }
+
 }
 # endif

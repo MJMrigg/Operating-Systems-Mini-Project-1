@@ -323,6 +323,7 @@ void
 scheduler(void)
 {
   struct proc *p;
+  int chosen_process;
 
   for(;;){
     // Enable interrupts on this processor.
@@ -358,6 +359,7 @@ scheduler(void)
 
       //Go through each process in the queue
       for(int j = 0; j < queues[i].size; j++){
+        //cprintf(" %d ", p->rr_slice_left);
         //If the process isn't runable, move on
         if(p->state != RUNNABLE){
           p = p->next;
@@ -398,6 +400,7 @@ scheduler(void)
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
         p->ticks[i] += 1; //Increase tick counter
+        chosen_process = p->pid; //Keep track of the chosen process
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
@@ -408,24 +411,17 @@ scheduler(void)
       }
     }
     break_twice:
-    release(&ptable.lock);
 
-    int chosen_process_pid = p->pid; //Keep track of chosen process
-
-    //Increase wait times of all processes by going through each process in each queue
-    for(int i = 0; i < 4; i++){
-      p = queues[i].head;
-      for(int j = 0; j < queues[i].size; j++){
-        //If the current process was the run, don't increase its wait time. It ran, it didn't wait
-        if(p->pid = chosen_process_pid){
-          p = p->next;
-          continue;
-        }
-        //Increase wait time in the queue for the process and then move on to the next one
-        p->wait_ticks[i] += 1;
-        p = p->next;
+    //Go through the process array and increase the wait ticks for every process that was waiting
+    for(p = &ptable.proc; p < &ptable.proc[NPROC]; p++){
+      //Check if process is waiting
+      if(p->state == RUNNABLE && p->state != RUNNING && p->pid != chosen_process){
+        int queue = (p->priority - 3) * -1; //Get queue of process
+        p->wait_ticks[queue] += 1;
       }
     }
+
+    release(&ptable.lock);
 
   }
 }

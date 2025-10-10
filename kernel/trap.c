@@ -105,12 +105,12 @@ trap(struct trapframe *tf)
   // Check if the process has been killed since we yielded
   if(proc && proc->killed && (tf->cs&3) == DPL_USER){
     exit();
-  }else if(proc != NULL){
+  }/*else if(proc != NULL){
     //If it wasn't, decrease its round robin slices
     proc->rr_slice_left -= 1;
     //If that was the last round robin slice, decrease its time slices
     if(proc->rr_slice_left <= 0){
       proc->timeslice_left -= 1;
     }
-  }
+  }*/
 }

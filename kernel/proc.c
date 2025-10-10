@@ -26,7 +26,7 @@ struct queue queues[4];
 void
 create_queues(void){
   for(int i = 0; i < 4; i++){
-    create_queue(queues[i]);
+    create_queue(&queues[i]);
   }
 }
 
@@ -359,7 +359,6 @@ scheduler(void)
 
       //Go through each process in the queue
       for(int j = 0; j < queues[i].size; j++){
-        //cprintf(" %d ", p->rr_slice_left);
         //If the process isn't runable, move on
         if(p->state != RUNNABLE){
           p = p->next;
@@ -400,6 +399,11 @@ scheduler(void)
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
         p->ticks[i] += 1; //Increase tick counter
+        p->rr_slice_left -= 1; //Decrease round robin slices
+        //If that was the last round robin slice, decrease its time slices
+        if(p->rr_slice_left <= 0){
+          p->timeslice_left -= 1;
+        }
         chosen_process = p->pid; //Keep track of the chosen process
 
         // Process is done running for now.
@@ -415,6 +419,7 @@ scheduler(void)
     //Go through the process array and increase the wait ticks for every process that was waiting
     for(p = &ptable.proc; p < &ptable.proc[NPROC]; p++){
       //Check if process is waiting
+      //cprintf(" %d ", p->priority);
       if(p->state == RUNNABLE && p->state != RUNNING && p->pid != chosen_process){
         int queue = (p->priority - 3) * -1; //Get queue of process
         p->wait_ticks[queue] += 1;

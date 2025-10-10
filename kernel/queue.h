@@ -11,16 +11,17 @@ struct queue{
     int size;          //Number of processes in the queue
 };
 
-void create_queue(struct queue q){
+void create_queue(struct queue *q){
     //There are no processes in the queue initially
-    q.head = NULL;
-    q.tail = NULL;
-    q.size = 0;
+    q->head = NULL;
+    q->tail = NULL;
+    q->size = 0;
 }
 
 void enqueue(struct queue *q, struct proc *new){
+    //cprintf("%d",q->size);
     //If this was the first process, have the head point to the new process
-    if(q->head == NULL || q->size == 0){
+    if(q->head == NULL || q->size <= 0){
         q->head = new;
     }else{
     //If it wasn't, have the process at the end of the queue point to the new process
@@ -34,7 +35,7 @@ void enqueue(struct queue *q, struct proc *new){
 
 void dequeue(struct queue *q, int pid){
     //If the queue is empty, do nothing
-    if(q->head == NULL || q->size == 0){
+    if(q->head == NULL || q->size <= 0){
         return;
     }
     //If the process is at the head of the queue, simply have the head stop pointing at the process
@@ -42,6 +43,7 @@ void dequeue(struct queue *q, int pid){
         struct proc *temp = q->head;
         q->head = q->head->next;
         temp->next = NULL;
+        q->size -= 1;
         return;
     }
     //If it was not, start looking through the whole queue
@@ -52,6 +54,7 @@ void dequeue(struct queue *q, int pid){
         if(cur->pid == pid){
             parent->next = cur->next;
             cur->next = NULL;
+            q->size -= 1;
             return;
         }
         //If it wasn't, move on to the next process

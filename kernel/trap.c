@@ -99,8 +99,17 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  if(proc && proc->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER)
+  if(proc && proc->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER){
+    int queue = (proc->priority - 3) * -1; //Figure out which queue the process is in
+    proc->ticks[queue] += 1; //Increase tick counter
+    proc->rr_slice_left -= 1; //Decrease round robin slices
+    //If that was the last round robin slice, decrease its time slices and yield back to the CPU
+    if(proc->rr_slice_left <= 0){
+      proc->timeslice_left -= 1;
+      proc->rr_slice_left = 0;
+    }
     yield();
+  }
 
   // Check if the process has been killed since we yielded
   if(proc && proc->killed && (tf->cs&3) == DPL_USER){

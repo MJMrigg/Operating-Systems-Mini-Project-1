@@ -9,6 +9,7 @@
 
 int partAcount = 0; //Number of times getpid is called
 
+int
 sys_fork(void)
 {
   return fork();
@@ -70,6 +71,13 @@ sys_getpinfo(void){
   unsigned int number = (unsigned int)&ptable;
 
   return number;
+}
+
+//Print out wait ticks of a process at each queue
+int
+sys_getprocinfo(int pid){
+  getprocinfo(pid);
+  return 0;
 }
 
 //Print the process table

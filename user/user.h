@@ -30,6 +30,7 @@ int SecondPart(void);
 int ThirdPart(void);
 int getpinfo(void);
 int ps(void);
+int getprocinfo(int pid);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

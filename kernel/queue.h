@@ -19,7 +19,6 @@ void create_queue(struct queue *q){
 }
 
 void enqueue(struct queue *q, struct proc *new){
-    //cprintf("%d",q->size);
     //If this was the first process, have the head point to the new process
     if(q->head == NULL || q->size <= 0){
         q->head = new;

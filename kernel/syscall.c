@@ -111,6 +111,7 @@ static int (*syscalls[])(void) = {
 [SYS_ThirdPart] sys_ThirdPart,
 [SYS_getpinfo] sys_getpinfo,
 [SYS_ps] sys_ps,
+[SYS_getprocinfo] sys_getprocinfo,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

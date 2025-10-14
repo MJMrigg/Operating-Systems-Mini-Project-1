@@ -27,6 +27,6 @@ int sys_FirstPart(void);
 int sys_SecondPart(void);
 int sys_ThirdPart(void);
 int sys_getpinfo(void);
-int sys_getprocinfo(int pid);
+int sys_getprocinfo(void);
 
 #endif // _SYSFUNC_H_

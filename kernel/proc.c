@@ -47,9 +47,9 @@ getprocinfo(int pid)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     //If this was the process we were looking for, print its wait ticks in all the queues
     if(p->pid == pid){
-      for(int j = 3; j >= 0; j++){
+      for(int j = 3; j >= 0; j--){
         int queue = (p->priority - 3) * -1;
-        cprintf("Level %d: ticks-used: %d", queue, p->wait_ticks[queue]);
+        cprintf("Level %d: ticks-used: %d\n", j, p->wait_ticks[queue]);
       }
       //Stop going through the process table
       break;

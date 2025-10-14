@@ -12,7 +12,7 @@ main(int argc, char *argv[]){
     //Wait an amount of ticks
     int x;
     int mypid = (int)getpid();
-    for(int i = 1; i < 6; i++){
+    for(int i = 1; i < atoi(argv[1]); i++){
         x = x + i;
     }
     //Print the amount of ticks this process was waiting

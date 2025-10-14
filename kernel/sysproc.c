@@ -75,7 +75,10 @@ sys_getpinfo(void){
 
 //Print out wait ticks of a process at each queue
 int
-sys_getprocinfo(int pid){
+sys_getprocinfo(void){
+  int pid;
+  if(argint(0, &pid) < 0)
+    return -1;
   getprocinfo(pid);
   return 0;
 }

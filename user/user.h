@@ -29,7 +29,7 @@ int FirstPart(void);
 int SecondPart(void);
 int ThirdPart(void);
 int getpinfo(void);
-int ps(void);
+int ps();
 int getprocinfo(int pid);
 
 // user library functions (ulib.c)

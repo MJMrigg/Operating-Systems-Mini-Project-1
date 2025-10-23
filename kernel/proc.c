@@ -47,9 +47,8 @@ getprocinfo(int pid)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     //If this was the process we were looking for, print its wait ticks in all the queues
     if(p->pid == pid){
-      for(int j = 3; j >= 0; j--){
-        int queue = (p->priority - 3) * -1;
-        cprintf("Level %d: ticks-used: %d\n", j, p->wait_ticks[queue]);
+      for(int i = 0, j = 3; j >= 0; i++, j--){
+        cprintf("Level %d: ticks-used: %d\n", j, p->ticks[i]);
       }
       //Stop going through the process table
       break;
@@ -348,8 +347,8 @@ int slices[2][4] = {
 void
 scheduler(void)
 {
-  struct proc *p;
-  struct proc *p_next;
+  //struct proc *p;
+  //struct proc *p_next;
   int chosen_process;
 
   for(;;){
@@ -378,6 +377,7 @@ scheduler(void)
     }
     release(&ptable.lock);*/
     
+    /*
     acquire(&ptable.lock);
     chosen_process = -1;
     //Go through each queue and look for the highest priority runnable process
@@ -486,145 +486,93 @@ scheduler(void)
       }
       
     }
-    release(&ptable.lock);
-  }
-}
+    release(&ptable.lock);*/
 
-/*
-void
-scheduler(void)
-{
-  struct proc *p;
-  struct proc *next_p;
-  // int chosen_process = -1;
-
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
-    
     acquire(&ptable.lock);
-    //Go through each queue and look for the highest priority runnable process
+    //Go through each queue and get the highest priority runnable process
     for(int i = 0; i < 4; i++){
-      p = queues[i].head; //Start at the beginning
-
-      //Go through each process in the queue
-      while(p != NULL){
-        next_p = p->next; // Save next before possibly dequeuing
-
-        //If the process isn't runable, move on
-        if(p->state != RUNNABLE){
-          p = next_p;
+      int j = 0;
+      while(j < NPROC){
+        //If the current process still has round robin slices and it can be run, run it
+        if(proc != NULL && proc->rr_slice_left >= 0 && proc->state == RUNNABLE){
+          goto switch_process;
+        }
+        //If there is no process in that index of the queue, move on
+        if(queues[i].procs[j] == NULL){
+          j += 1;
           continue;
         }
-        //If the process is out of time slices, move it to a lower priority queue
-        if(p->timeslice_left <= 0 && p->priority > 0){
-          //If the process is not at the lowest queue 0
-          if (i < 3){
-            struct proc *temp = p; //Get process
-            if(next_p != NULL){
-              p = next_p; //Set p to the next process in the queue
-            }
-            //Remove the process from the queue and send it to the lower queue
-            dequeue(&queues[i],temp->pid);
-            enqueue(&queues[i+1],temp);
-            //Set up rr slices, time slices, and priority
-            temp->rr_slice_left = slices[0][i+1];
-            temp->timeslice_left = slices[1][i+1];
-            temp->priority -= 1;
-          }
-          else{ //already at the lowest queue, keep it running at the same queue until it get boost 
-            //Set up rr slices, time slices, and priority
-            p->rr_slice_left = slices[0][i];
-            p->timeslice_left = slices[1][i];
-          }
-          
+        //If the process in that index of the queue is not runnable, move on
+        if(queues[i].procs[j]->state != RUNNABLE){
+          j += 1;
           continue;
         }
-        //If the process is out of round robin slices, move it to the back of the queue but keep its priority
-        if(p->rr_slice_left <= 0 && p->priority > 0){
-          struct proc *temp = p; //Get process
-          p = next_p; //Set p to next process in the queue
-          //Remove process from the front of the queue and send it to the back of the same queue
-          dequeue(&queues[i],temp->pid);
+        //If the process in that index of the queue has run out of time slices, move it to the next lower priority
+        if(queues[i].procs[j]->timeslice_left <= 0 && queues[i].procs[j]->priority > 0){
+          struct proc *temp = queues[i].procs[j];
+          dequeue(&queues[i],queues[i].procs[j]->pid);
+          enqueue(&queues[i+1],temp);
+          //Reset time slices and rr slices
+          temp->timeslice_left = slices[0][i+1];
+          temp->rr_slice_left = slices[1][i+1];
+          //Go back to the beginning of the queue
+          j = 0;
+          continue;
+        }
+        //If the process in that index of the queue has run out of rr slices, move it to the back of the queue
+        if(queues[i].procs[j]->rr_slice_left <= 0 && queues[i].procs[j]->priority > 0){
+          struct proc *temp = queues[i].procs[j];
+          dequeue(&queues[i],queues[i].procs[j]->pid);
           enqueue(&queues[i],temp);
           //Reset rr slices
-          temp->rr_slice_left = slices[0][i];
+          temp->timeslice_left = slices[0][i];
+          //Go back to the beginning of the queue
+          j = 0;
           continue;
         }
-        //If the process made it this far, it is a runnable process not out of time or rr slices
-        
-
+        //If a process made it this far, it means it's a runnable process that isn't out of rr slots or time slots
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
-        proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
+        proc = queues[i].procs[j];
+        switch_process:
+        //release(&ptable.lock);
+        switchuvm(proc);
+        proc->state = RUNNING;
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
-        
-        //Check process status before updating 
-        //It's possible that the process changed state (SLEEPING|UNUSED|ZOMBIE).
-        if (proc != 0 && proc->pid == p->pid){
-          if(p->state == RUNNABLE || p->state == RUNNING){
-            p->ticks[i] += 1; //Increase tick counter
-            p->rr_slice_left -= 1; //Decrease round robin slices
-            //If that was the last round robin slice, decrease its time slices
-            if(p->rr_slice_left <= 0){
-              p->timeslice_left -= 1;
-            }
-          }
-        }
-          
-        
-        // chosen_process = p->pid; //Keep track of the chosen process
+        chosen_process = proc->pid; //Keep track of the chosen process
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
 
-        //Priority boost
-        for(int q_index = 0; q_index < 4; q_index++){
-          struct proc *tmp = queues[q_index].head;
-          while(tmp != NULL){
-              struct proc *next_tmp = tmp->next; 
-              if(tmp->state == RUNNABLE){
-                  int queue = (tmp->priority - 3) * -1;  
-                  if((slices[1][queue]*10) % tmp->wait_ticks[queue] == 0 && queue > 0){
-                      dequeue(&queues[queue], tmp->pid);
-                      enqueue(&queues[queue-1], tmp);               
-                      tmp->priority += 1;
-                      tmp->wait_ticks[queue] = 0;
-                  }
-              }
-
-              tmp = next_tmp;
+        //Update wait ticks of the processes
+        struct proc *p;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          //If p is the current process, don't increase its wait ticks, as it was running
+          if(p == proc){
+            continue;
+          }
+          //Get queue of the process and then increase its wait ticks on that queue
+          int queue = (p->priority - 3) * -1;
+          p->wait_ticks[queue] += 1;
+          //If the process has been waiting too long, boost it up a level
+          if(p->priority < 3 && p->wait_ticks[queue] % (slices[1][queue]*10) == 0){
+            dequeue(&queues[queue],p->pid);
+            enqueue(&queues[queue-1],p);
+            p->rr_slice_left = slices[0][queue-1];
+            p->timeslice_left = slices[1][queue-1];
+            p->priority += 1;
           }
         }
-
-        //Move on to the next process
-        proc = 0;
-        p = next_p;
-
-        
-        // goto break_twice; //The process was found. Stop going through the queues
+        //Go back to the start of the queue so that lower priority processes aren't scheduled over higher ones
+        //j = 0; 
       }
     }
-    
     release(&ptable.lock);
-    
-  //   break_twice:
-
-  //     //Go through the process array and increase the wait ticks for every process that was waiting
-  //     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-  //       //Check if process is waiting
-  //       //cprintf(" %d ", p->priority);
-  //       if(p->state == RUNNABLE && p->state != RUNNING && p->pid != chosen_process){
-  //         int queue = (p->priority - 3) * -1; //Get queue of process
-  //         p->wait_ticks[queue] += 1;
-  //       }
-  //     }
+    switchkvm();
   }
-}*/
+}
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state.

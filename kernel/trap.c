@@ -103,11 +103,12 @@ trap(struct trapframe *tf)
     int queue = (proc->priority - 3) * -1; //Figure out which queue the process is in
     proc->ticks[queue] += 1; //Increase tick counter
     proc->rr_slice_left -= 1; //Decrease round robin slices
-    //If that was the last round robin slice, decrease its time slices and yield back to the CPU
+    //If that was the last round robin slice, decrease its time slices
     if(proc->rr_slice_left <= 0){
       proc->timeslice_left -= 1;
       proc->rr_slice_left = 0;
     }
+    //Yield back to the CPU
     yield();
   }
 

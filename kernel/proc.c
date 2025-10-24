@@ -121,7 +121,11 @@ found:
   p->priority = 3; //Set priority to highest queue
   p->timeslice_left = 8; //The process has 8 time slots left in the current time slice
   p->rr_slice_left = 1; //The process has 1 time slot left in the current round robin time slice
-  p->next = NULL; //There is no process next in the queue
+  //The process has no ticks or wait ticks
+  for(int i = 0; i < 4; i++){
+    p->ticks[i] = 0;
+    p->wait_ticks[i] = 0;
+  }
 
   release(&ptable.lock);
 
@@ -332,10 +336,8 @@ wait(void)
 }
 
 //RR and time slices for each queue
-int slices[2][4] = {
-  {1,2,4,64},     //RR time slices
-  {8,16,32,64}    //Time slices
-};
+int rr_slices[4] = {1,2,4,64};
+int time_slices = 8;
 
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -347,10 +349,6 @@ int slices[2][4] = {
 void
 scheduler(void)
 {
-  //struct proc *p;
-  //struct proc *p_next;
-  int chosen_process;
-
   for(;;){
     // Enable interrupts on this processor.
     sti();
@@ -377,124 +375,13 @@ scheduler(void)
     }
     release(&ptable.lock);*/
     
-    /*
-    acquire(&ptable.lock);
-    chosen_process = -1;
-    //Go through each queue and look for the highest priority runnable process
-    for(int i = 0; i < 4; i++){
-      p = queues[i].head; //Start at the beginning
-
-      //Go through each process in the queue
-      while(p != NULL){
-        p_next = p->next;
-        //If the process was killed, remove it from the queue
-        if(p->killed){
-          dequeue(&queues[i],p->pid);
-          //Continue going through the current queue
-          if(p_next == NULL){
-            //If that was the last node in the queue, go back to the beginning of the queue
-            //That way the scheduler doesn't start running processes in lower priority queues 
-            //while there are still some in this one
-            p = queues[i].head;
-          }else{
-            p = p_next;
-          }
-          continue;
-        }
-        //If the process isn't runable, move on
-        if(p->state != RUNNABLE){
-          p = p_next;
-          continue;
-        }
-        //If the process is out of time slices and its not on the lowest queue, move it down
-        if(p->timeslice_left <= 0 && p->priority > 0){
-          //Take it out of the current queue and put it in the next one
-          dequeue(&queues[i],p->pid);
-          enqueue(&queues[i+1],p);
-          //Reset round robin and time slices for the process
-          p->rr_slice_left = slices[0][i+1];
-          p->timeslice_left = slices[1][i+1];
-          p->priority -= 1;
-          //Continue going through the current queue
-          if(p_next == NULL){
-            //If that was the last node in the queue, go back to the beginning of the queue
-            //That way the scheduler doesn't start running processes in lower priority queues 
-            //while there are still some in this one
-            p = queues[i].head;
-          }else{
-            p = p_next;
-          }
-          continue;
-        }
-        //If the process is out of round robin slices, move it to the back of the queue
-        if(p->rr_slice_left <= 0 && p->priority > 0){
-          //Take it out of the queue and then put it in the back of the current one
-          dequeue(&queues[i],p->pid);
-          enqueue(&queues[i],p);
-          //Reset round robin time slices for the process
-          p->rr_slice_left = slices[0][i];
-          //Continue going through the queue
-          if(p_next == NULL){
-            //If that was the last node in the queue, go back to the beginning of the queue
-            //That way the scheduler doesn't start running processes in lower priority queues 
-            //while there are still some in this one
-            p = queues[i].head;
-          }else{
-            p = p_next;
-          }
-          continue;
-        }
-        //If the process made it this far, it is a runnable process not out of time or rr slices
-        
-        // Switch to chosen process.  It is the process's job
-        // to release ptable.lock and then reacquire it
-        // before jumping back to us.
-        proc = p;
-        //release(&ptable.lock);
-        switchuvm(p);
-        p->state = RUNNING;
-        swtch(&cpu->scheduler, proc->context);
-        switchkvm();
-        chosen_process = p->pid; //Keep track of the chosen process
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-
-        proc = 0;
-
-        //acquire(&ptable.lock);
-        //Go through the process array and increase the wait ticks for every process that was waiting
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-          //Check if process is waiting
-          if(p->state == RUNNABLE && p->state != RUNNING && p->pid != chosen_process){
-            int queue = (p->priority - 3) * -1; //Get queue of process
-            p->wait_ticks[queue] += 1; //Increase wait ticks
-            //If the process has been waiting for too long, move it up
-            if(queue != 0 && p->wait_ticks[queue] % (slices[1][queue] * 10) == 0){
-              p->priority += 1;
-              dequeue(&queues[queue],p->pid);
-              enqueue(&queues[queue-1],p);
-            }
-          }
-        }
-        break;
-
-      }
-
-      if(chosen_process != -1){
-        break;
-      }
-      
-    }
-    release(&ptable.lock);*/
-
     acquire(&ptable.lock);
     //Go through each queue and get the highest priority runnable process
     for(int i = 0; i < 4; i++){
       int j = 0;
       while(j < NPROC){
         //If the current process still has round robin slices and it can be run, run it
-        if(proc != NULL && proc->rr_slice_left >= 0 && proc->state == RUNNABLE){
+        if(proc != NULL && proc->rr_slice_left > 0 && proc->state == RUNNABLE){
           goto switch_process;
         }
         //If there is no process in that index of the queue, move on
@@ -513,8 +400,10 @@ scheduler(void)
           dequeue(&queues[i],queues[i].procs[j]->pid);
           enqueue(&queues[i+1],temp);
           //Reset time slices and rr slices
-          temp->timeslice_left = slices[0][i+1];
-          temp->rr_slice_left = slices[1][i+1];
+          temp->timeslice_left = time_slices;
+          temp->rr_slice_left = rr_slices[i+1];
+          //Assign new priority
+          temp->priority -= 1;
           //Go back to the beginning of the queue
           j = 0;
           continue;
@@ -525,7 +414,7 @@ scheduler(void)
           dequeue(&queues[i],queues[i].procs[j]->pid);
           enqueue(&queues[i],temp);
           //Reset rr slices
-          temp->timeslice_left = slices[0][i];
+          temp->rr_slice_left = rr_slices[i];
           //Go back to the beginning of the queue
           j = 0;
           continue;
@@ -541,7 +430,6 @@ scheduler(void)
         proc->state = RUNNING;
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
-        chosen_process = proc->pid; //Keep track of the chosen process
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
@@ -557,11 +445,11 @@ scheduler(void)
           int queue = (p->priority - 3) * -1;
           p->wait_ticks[queue] += 1;
           //If the process has been waiting too long, boost it up a level
-          if(p->priority < 3 && p->wait_ticks[queue] % (slices[1][queue]*10) == 0){
+          if(p->state == RUNNABLE && p->priority < 3 && (p->wait_ticks[queue] % (rr_slices[queue]*time_slices*10)) == 0){
             dequeue(&queues[queue],p->pid);
             enqueue(&queues[queue-1],p);
-            p->rr_slice_left = slices[0][queue-1];
-            p->timeslice_left = slices[1][queue-1];
+            p->rr_slice_left = rr_slices[queue-1];
+            p->timeslice_left = time_slices;
             p->priority += 1;
           }
         }

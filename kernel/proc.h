@@ -86,7 +86,6 @@ struct proc {
   int wait_ticks[4];           // Ticks waited at each priority
   int timeslice_left;          // Remaining ticks in current time slice
   int rr_slice_left;           // Remaining ticks in current RR turn
-  //struct proc *next;           // Next process in the queue
 };
 
 // Process memory is laid out contiguously, low addresses first:

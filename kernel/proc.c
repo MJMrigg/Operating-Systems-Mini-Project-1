@@ -424,8 +424,8 @@ scheduler(void)
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
         proc = queues[i].procs[j];
+
         switch_process:
-        //release(&ptable.lock);
         switchuvm(proc);
         proc->state = RUNNING;
         swtch(&cpu->scheduler, proc->context);

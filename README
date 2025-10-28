@@ -1,19 +1,22 @@
-The Operating Systems Mini Project 1 is a project created by the students of Florida Polytechnic University for the COP-4610 Section 3 Operating Systems Concepts course taught by Dr. Luis Jaimes. The aim of the project is to use xv6 to accomplish three goals:
+The Operating Systems Mini Project is a project created by the students of Florida Polytechnic University for the COP-4610 Section 3 Operating Systems Concepts course taught by Dr. Luis Jaimes. The aim of the project is to use xv6 to accomplish the following goals:
 
-A.) Create a file that prints system call that returns the number of times the function getpid() has been called. 
-B.) Create a file that prints the number of system calls the operating system has called.
-C.) Create a file that prints the number of successful system calls.
+1A.) Create a file that prints the number of times the function getpid() has been called. 
+1B.) Create a file that prints the number of system calls the operating system has called.
+1C.) Create a file that prints the number of successful system calls.
+2A.) Convert the scheduler into a Multi Level Feedback Queue.
+2B.) Create a file that prints the number of time slices a process has used up at each queue.
 
 Running the Project:
 To run the project, it is assumed that you have Ubuntu downloaded on your computer. If you do not, see the installing_instructions file.
-1.) Open the SystemStart.bat file.
+1.) Run the SystemStart.bat file.
 2.) Once the file has opened, run the command "make qemu-nox". This will compile and run xv6.
 3.) From there, you can run commands in your xv6 environment. See the users/makefile.mk for list of valid commands.
 4.) To exit xv6, quickly press ctrl+a, release, and press x on your keyboard.
 
 Commands Associated with each Goal:
-A - getpid, PartA
-B - PartB
-C - PartC
+1A - getpid, PartA
+1B - PartB
+1C - PartC
+2B - pstest, tick-test {ticks}
 
 Note: This project was developed in a Windows 11 environment. Results on other operating systems may vary.
